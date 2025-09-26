@@ -18,6 +18,7 @@ func (h *ScraperHandler) ScraperRoutes(c *echo.Group) {
 	scraperAPI := c.Group("/scraper")
 
 	scraperAPI.POST("", h.ScraperConcurrent)
+	scraperAPI.POST("/synchronous", h.ScraperSynchronous)
 }
 
 func (h *ScraperHandler) ScraperConcurrent(c echo.Context) error {
@@ -57,6 +58,41 @@ func (h *ScraperHandler) ScraperConcurrent(c echo.Context) error {
 	response := make([]ScraperResponse, 0, len(body.Urls))
 	for r := range ch {
 		response = append(response, r)
+	}
+
+	elapsed := time.Since(start)
+	return c.JSON(http.StatusOK, map[string]any{
+		"handler_time": elapsed.Seconds(),
+		"results":      response,
+	})
+}
+
+func (h *ScraperHandler) ScraperSynchronous(c echo.Context) error {
+	start := time.Now()
+	ctx := c.Request().Context()
+
+	var body ScraperRequest
+	if err := c.Bind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "invalid body request",
+		})
+	}
+
+	if len(body.Urls) == 0 {
+		c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "urls field must be grater than 0",
+		})
+	}
+
+	var result []*ScraperResponse
+	for _, url := range body.Urls {
+		data := WebScraperData(ctx, url)
+		result = append(result, data)
+	}
+
+	response := make([]ScraperResponse, 0, len(body.Urls))
+	for _, r := range result {
+		response = append(response, *r)
 	}
 
 	elapsed := time.Since(start)
