@@ -17,6 +17,7 @@ A ideia é mostrar como a concorrência melhora o tempo de resposta em cenários
   git clone git@github.com:EduardoMark/web-scraper-concurrent.git
   cd web-scraper-concurrent
 ```
+Adicione o arquivo .env na raiz do projeto e crie a variável "SERVER_PORT=3000"
 
 Inicie o serviço
 ```bash
